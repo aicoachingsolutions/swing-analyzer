@@ -5,7 +5,8 @@ export default function SiteFooter() {
     <footer className="ftr">
       <div className="ftr__inner">
         <div className="ftr__brand">
-          <span className="hdr__mark">V</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="hdr__logo" src="/coach-v-logo.png" alt="Coach V" width={36} height={36} />
           <span>AI Coaching Solutions</span>
         </div>
         <nav className="ftr__legal" aria-label="Legal">

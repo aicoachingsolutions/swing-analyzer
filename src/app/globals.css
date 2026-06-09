@@ -52,18 +52,13 @@ body {
   color: #ffffff;
   font-size: 0.98rem;
 }
-.hdr__mark {
-  display: inline-grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--gold);
-  color: var(--deep-navy);
-  font-weight: 900;
-  font-size: 1rem;
+.hdr__logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
   flex-shrink: 0;
 }
+.ftr__brand .hdr__logo { width: 36px; height: 36px; }
 .hdr__nav {
   display: flex;
   align-items: center;

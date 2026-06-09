@@ -5,7 +5,8 @@ export default function SiteHeader() {
     <header className="hdr">
       <div className="hdr__inner">
         <a className="hdr__brand" href={LINKS.marketing}>
-          <span className="hdr__mark">V</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="hdr__logo" src="/coach-v-logo.png" alt="Coach V — AI Coaching Solutions" width={40} height={40} />
           <span>AI Coaching Solutions</span>
         </a>
         <nav className="hdr__nav" aria-label="Primary">
