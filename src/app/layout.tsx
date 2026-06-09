@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import SiteHeader from "./_components/site-header";
+import SiteFooter from "./_components/site-footer";
 
 export const metadata: Metadata = {
   title: "Free Swing Analyzer — AI Coaching Solutions",
@@ -14,7 +16,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <div className="page-shell">
+          <SiteHeader />
+          <div className="page-shell__main">{children}</div>
+          <SiteFooter />
+        </div>
+      </body>
     </html>
   );
 }
