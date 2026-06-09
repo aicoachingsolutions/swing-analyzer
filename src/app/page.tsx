@@ -37,7 +37,7 @@ const MOTIONS: Record<string, { value: string; label: string }[]> = {
 };
 
 export default function Home() {
-  const [sport, setSport] = useState("golf");
+  const [sport, setSport] = useState("baseball");
   const [motion, setMotion] = useState("swing");
   const [handedness, setHandedness] = useState("");
   const [ageGroup, setAgeGroup] = useState("");
@@ -152,10 +152,10 @@ export default function Home() {
       <p className="eyebrow">Free Swing Analyzer</p>
       <h1>Describe the swing. Get a coaching breakdown.</h1>
       <p className="lede">
-        Tell us what you&apos;re seeing in a golf, baseball, or softball swing or
-        pitch — like &ldquo;he keeps slicing&rdquo; or &ldquo;she rolls over
-        everything.&rdquo; You&apos;ll get the root cause, cues, and a drill for
-        your next practice.
+        Tell us what you&apos;re seeing in a baseball, softball, or golf swing or
+        pitch — like &ldquo;she rolls over everything&rdquo; or &ldquo;he&apos;s
+        late on the rise.&rdquo; You&apos;ll get the root cause, cues, and a drill
+        for your next practice.
       </p>
 
       <form className="card" onSubmit={onSubmit}>
@@ -170,9 +170,9 @@ export default function Home() {
                 setMotion((MOTIONS[s] ?? [])[0]?.value ?? "swing");
               }}
             >
-              <option value="golf">Golf</option>
               <option value="baseball">Baseball</option>
               <option value="softball">Softball</option>
+              <option value="golf">Golf</option>
             </select>
           </div>
           <div>
