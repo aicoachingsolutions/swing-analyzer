@@ -49,10 +49,19 @@ export async function POST(req: Request) {
           { status: 401 }
         );
       }
+      if (access.reason === "pro_monthly_cap") {
+        await logUsage(userId, ip, "video", 429);
+        return NextResponse.json(
+          {
+            error: "You've hit this month's Pro video limit. It resets on a rolling 30-day cycle.",
+          },
+          { status: 429 }
+        );
+      }
       await logUsage(userId, ip, "video", 402);
       return NextResponse.json(
         {
-          error: "You've used your 2 free video breakdowns. Buy a pack or go Pro for unlimited.",
+          error: "You've used your 2 free video breakdowns. Buy a pack or go Pro for more.",
           upgrade: true,
         },
         { status: 402 }
@@ -88,7 +97,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { result, mode: access.mode, freeRemaining: access.freeRemaining },
+      { result, mode: access.mode, remaining: access.remaining },
       { headers: { "X-Analyzer-Video-Mode": access.mode } }
     );
   } catch (err: unknown) {
