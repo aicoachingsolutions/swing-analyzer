@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { VideoAnalyzer } from "./_components/video-analyzer";
 
 type Metrics = {
   primaryFault: string;
@@ -44,6 +45,7 @@ export default function Home() {
   const [skillLevel, setSkillLevel] = useState("");
   const [mainIssue, setMainIssue] = useState("");
   const [hp, setHp] = useState("");
+  const [inputMode, setInputMode] = useState<"text" | "video">("text");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +160,37 @@ export default function Home() {
         for your next practice.
       </p>
 
+      <div className="row" style={{ marginBottom: 20 }}>
+        <button
+          type="button"
+          className="btn"
+          style={
+            inputMode === "text"
+              ? { marginTop: 0 }
+              : { marginTop: 0, background: "transparent", color: "var(--gold)", border: "1px solid var(--gold)" }
+          }
+          onClick={() => setInputMode("text")}
+        >
+          Describe it
+        </button>
+        <button
+          type="button"
+          className="btn"
+          style={
+            inputMode === "video"
+              ? { marginTop: 0 }
+              : { marginTop: 0, background: "transparent", color: "var(--gold)", border: "1px solid var(--gold)" }
+          }
+          onClick={() => setInputMode("video")}
+        >
+          Upload video
+        </button>
+      </div>
+
+      {inputMode === "video" && <VideoAnalyzer />}
+
+      {inputMode === "text" && (
+        <>
       <form className="card" onSubmit={onSubmit}>
         <div className="row">
           <div>
@@ -319,6 +352,8 @@ export default function Home() {
             coaching or medical advice.
           </p>
         </section>
+      )}
+        </>
       )}
     </main>
   );
