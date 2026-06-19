@@ -188,3 +188,185 @@ Task: Deliver a sharp, specific, high-quality coaching breakdown. Return valid J
   const content = response.choices?.[0]?.message?.content ?? "";
   return BreakdownSchema.parse(JSON.parse(content));
 }
+
+/* ─── Video (vision) breakdown — Pro feature ────────────────────────────────
+   The client extracts key frames from the clip and sends them here. The vision
+   model MUST ground every callout in a specific frame (proof of vision) and may
+   only describe what is visible. Frames are passed in swing order. */
+
+export const VideoBreakdownRequestSchema = z.object({
+  sport: z.enum(BREAKDOWN_SPORTS),
+  motion: z.enum(BREAKDOWN_MOTIONS),
+  handedness: z.enum(["left", "right"]).optional(),
+  ageGroup: z.string().max(80).optional().default(""),
+  skillLevel: z.string().max(60).optional().default(""),
+  // Optional with video — the frames are the primary input.
+  mainIssue: z.string().max(600).optional().default(""),
+  // Base64 data URLs of the extracted frames, in swing order (3–8).
+  frames: z.array(z.string().min(1)).min(3).max(8),
+  _hp: z.string().max(0, "Invalid request.").optional().default(""),
+});
+
+export type VideoBreakdownInput = z.infer<typeof VideoBreakdownRequestSchema>;
+
+const FrameAnalysisSchema = z.object({
+  index: z.number().int().min(0), // which uploaded frame (0-based, in order)
+  phase: z.enum(["load", "stride", "contact", "finish", "other"]),
+  observation: z.string(), // what is visible IN THIS FRAME, specific
+  isKeyFault: z.boolean(), // the single "money frame" to annotate
+  calloutLabel: z.string(), // short label drawn on the money frame ("" if none)
+  region: z.object({ x: z.number(), y: z.number() }), // 0–1 anchor for the marker
+});
+
+export const VideoBreakdownSchema = BreakdownSchema.extend({
+  // proof-of-vision: per-frame, frame-anchored analysis
+  frames: z.array(FrameAnalysisSchema).min(1),
+  // honesty: what angle/quality the model judged it could (and couldn't) assess
+  angleNote: z.string(),
+});
+
+export type VideoBreakdownResult = z.infer<typeof VideoBreakdownSchema>;
+
+export async function runVideoBreakdown(
+  input: VideoBreakdownInput
+): Promise<VideoBreakdownResult> {
+  const { sport, motion, handedness, ageGroup, skillLevel, mainIssue, frames } = input;
+  const framework = getFramework(sport, motion);
+  const athleteProfile = `${ageGroup || "a developing"} athlete at a ${skillLevel || "developing"} level`;
+
+  const system = `
+You are a national-level ${sport} ${motion} coach and biomechanics specialist. You are shown ${frames.length} still frames extracted in order from a single clip of one athlete's ${motion}. Analyze the ACTUAL frames and give a breakdown sharp enough to run practice off tonight.
+
+HOW YOU THINK (reason from this sport framework):
+${framework}
+
+PROOF OF VISION — this is mandatory:
+- The frames are numbered 0..${frames.length - 1} in swing order. Tie EVERY observation to a specific frame index.
+- Describe ONLY what is actually visible in the frames. Never invent a position you cannot see.
+- Pick exactly ONE frame as the key fault frame (isKeyFault=true); set a short calloutLabel and a region {x,y} (0–1, where 0,0 is top-left) pointing at the body part to mark. All other frames: isKeyFault=false, calloutLabel "".
+- Map each frame to a swing phase (load/stride/contact/finish/other).
+
+HONESTY (build trust, don't fake it):
+- If the angle or quality limits what you can judge, say so in angleNote (e.g. "Face-on angle, so I can't fully judge swing plane — film down-the-line for that."). Hedge when a frame is blurry or a body part is out of view. A confident wrong call is worse than an honest limitation.
+
+COACHING RUBRIC:
+- Diagnose the ROOT CAUSE, not the symptom; trace the cause-and-effect chain.
+- Calibrate vocabulary and reps to ${athleteProfile}. Make cues FELT. Give ONE priority, not five.
+
+OUTPUT — valid JSON only:
+- frames: one entry per provided frame (index, phase, observation, isKeyFault, calloutLabel, region).
+- angleNote: what the footage let you assess and what it didn't.
+- mechanics (4–6 sentences): root cause + how it cascades, grounded in the frames.
+- timing (2–4 sentences): where in the sequence it breaks down.
+- cues (4–7 strings): short, vivid, athlete-facing.
+- nextFocus (2–4 sentences): the single highest-leverage fix and why.
+- drill (4–6 sentences): a recognized drill with setup, reps for ${athleteProfile}, the one thing to watch, why it targets this root cause, and a progression.
+- metrics: primaryFault (short label), faultCategory, severity (1–5), confidence (0–1).
+`.trim();
+
+  const handednessLine = handedness ? `Handedness: ${handedness}-handed. ` : "";
+  const intro =
+    `Sport: ${sport}. Motion: ${motion}. ${handednessLine}` +
+    `Athlete: ${ageGroup || "(age not provided)"}, ${skillLevel || "(skill not provided)"}. ` +
+    (mainIssue ? `Coach also notes: ${mainIssue}. ` : "") +
+    `The ${frames.length} frames follow in swing order. Return valid JSON only.`;
+
+  const userContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+    { type: "text", text: intro },
+    ...frames.map(
+      (url): OpenAI.Chat.Completions.ChatCompletionContentPart => ({
+        type: "image_url",
+        // "low" keeps token cost down; raise to "high" if accuracy needs it.
+        image_url: { url, detail: "low" },
+      })
+    ),
+  ];
+
+  // Vision-capable model. Override with OPENAI_VISION_MODEL if the default text
+  // model isn't multimodal.
+  const model =
+    process.env.OPENAI_VISION_MODEL || process.env.OPENAI_MODEL || "gpt-4o";
+
+  const response = await getOpenAI().chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: userContent },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "video_breakdown",
+        strict: true,
+        schema: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            frames: {
+              type: "array",
+              minItems: 1,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  index: { type: "integer" },
+                  phase: {
+                    type: "string",
+                    enum: ["load", "stride", "contact", "finish", "other"],
+                  },
+                  observation: { type: "string" },
+                  isKeyFault: { type: "boolean" },
+                  calloutLabel: { type: "string" },
+                  region: {
+                    type: "object",
+                    additionalProperties: false,
+                    properties: { x: { type: "number" }, y: { type: "number" } },
+                    required: ["x", "y"],
+                  },
+                },
+                required: [
+                  "index",
+                  "phase",
+                  "observation",
+                  "isKeyFault",
+                  "calloutLabel",
+                  "region",
+                ],
+              },
+            },
+            angleNote: { type: "string" },
+            mechanics: { type: "string" },
+            timing: { type: "string" },
+            cues: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 8 },
+            nextFocus: { type: "string" },
+            drill: { type: "string" },
+            metrics: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                primaryFault: { type: "string" },
+                faultCategory: { type: "string" },
+                severity: { type: "number" },
+                confidence: { type: "number" },
+              },
+              required: ["primaryFault", "faultCategory", "severity", "confidence"],
+            },
+          },
+          required: [
+            "frames",
+            "angleNote",
+            "mechanics",
+            "timing",
+            "cues",
+            "nextFocus",
+            "drill",
+            "metrics",
+          ],
+        },
+      },
+    },
+  });
+
+  const content = response.choices?.[0]?.message?.content ?? "";
+  return VideoBreakdownSchema.parse(JSON.parse(content));
+}
