@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { BuyOptions } from "./buy-options";
 
 type FrameAnalysis = {
   index: number;
@@ -279,16 +280,10 @@ export function VideoAnalyzer() {
                 </a>
               </>
             )}
-            {cta === "upgrade" && (
-              <>
-                <br />
-                <a className="upgrade" href="https://www.aicoachingsolutions.net/pricing">
-                  Get more breakdowns →
-                </a>
-              </>
-            )}
           </div>
         )}
+
+        {cta === "upgrade" && <BuyOptions />}
       </form>
 
       {result && keyFrame && (
