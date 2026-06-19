@@ -4,11 +4,15 @@
 > the live text analyzer (Phase 1 done) and the tier system already in
 > `src/lib/tiers.ts` + `src/lib/usage.ts`. Gated to **Pro**.
 
-## Guiding principle
-**Make upload-and-feedback seamless before investing in biomechanics.** A clean
-"upload a clip → get pro-quality coaching feedback in under a minute" loop feels
-impressive on its own — even with zero pose tracking. Advanced analysis (angles,
-scoring, model comparison) is a later moat, not the MVP. Ship the seamless core first.
+## Guiding principles
+1. **Make upload-and-feedback seamless before investing in biomechanics.** A clean
+   "upload a clip → get pro-quality coaching feedback in under a minute" loop feels
+   impressive on its own — even with zero pose tracking. Advanced analysis (angles,
+   scoring, model comparison) is a later moat, not the MVP. Ship the seamless core first.
+2. **The output must PROVE it used the video.** This is non-negotiable, not a polish item.
+   If the breakdown could have been written without watching the clip, the product reads
+   as fake — fatal on a cold TikTok audience that defaults to "it's just generic coaching."
+   See "Proof of Vision" below; it's a hard V1 requirement.
 
 ---
 
@@ -72,6 +76,57 @@ The hard part is **not** the AI; it's getting a usable clip. Design for it:
 - Use a **vision-capable** model for the frame step (the analyzer's `gpt-5.4-mini` if it accepts
   images; otherwise `gpt-4o` for the vision call). Extend the existing prompt: *"Here are N frames
   of a {sport} {motion}; analyze using the framework below."*
+
+---
+
+## Version 1 — Proof of Vision (HARD REQUIREMENT)
+
+The breakdown must visibly prove it analyzed **this specific clip**. Without it, skeptics
+(especially on TikTok Live) dismiss it as generic coaching and conversion dies. This is
+core V1 scope, not a later enhancement.
+
+### Ladder of proof (V1 ships levels 1–3; level 4 is V2)
+| Level | What the user sees | Effort | Proof strength |
+|-------|-------------------|--------|----------------|
+| 1. Echo the frames | The actual stills pulled from *their* clip, labeled by swing phase (Load / Stride / Contact / Finish) | Low (already extracting) | "It pulled my swing apart" |
+| 2. Frame-anchored callouts | Every observation cites a specific frame: *"In your contact frame — hips cleared, but the barrel's still wrapped"* | Low (prompt + schema) | "It's describing MY frames" |
+| 3. The annotated "money frame" | The key fault still, enlarged, with a drawn marker + label (*"front shoulder flying open →"*) | Medium (canvas overlay) | Undeniable + **shareable** |
+| 4. Pose dots / lines | Skeleton overlay + angle measurements | High (pose ML) | Scientific — **V2** |
+
+### V1 mechanic
+1. **Extract 4–6 frames**, show them back in sequence, each labeled with its swing phase.
+2. **Force frame-grounded output** — the model must tie every callout to a visible frame and
+   describe only what is actually there.
+3. **Render the "money frame"** — the frame flagged `isKeyFault`, blown up with a labeled
+   marker drawn on it. That image is the screenshot people post — proof doubles as marketing.
+
+### Extended result schema (additive to the text breakdown)
+```
+frames: Array<{
+  phase: "load" | "stride" | "contact" | "finish" | "other"
+  imageRef: string          // storage path or data URL of the extracted frame
+  observation: string       // what's visible IN THIS FRAME, specific
+  isKeyFault: boolean       // the single "money frame" to annotate
+  calloutLabel?: string     // short label drawn on the money frame
+  region?: { x: number; y: number }  // optional 0–1 anchor for the marker
+}>
+```
+The existing `mechanics / timing / cues / nextFocus / drill` stay — `frames` adds the proof layer.
+
+### Anti-hallucination rules (accuracy is the whole game)
+Showing the frames is transparent — so a wrong callout is *worse* than generic text, because the
+user can see it's wrong. The prompt MUST:
+- Describe **only what is visible**; never invent positions not shown.
+- **Hedge on bad input** — blurry frame, partial body, or wrong angle → say so:
+  *"This is a face-on angle, so I can't fully judge swing plane — film down-the-line for that."*
+  Admitting limits builds trust; confident wrong calls destroy it.
+- Anchor `isKeyFault` only to a frame where the fault is genuinely visible; if uncertain, pick the
+  clearest frame and soften the language.
+
+### Why this also drives growth
+The annotated money frame is inherently viral — *"the AI circled exactly what my coach keeps
+telling me."* Every shared frame is branded proof that pulls the next users to the link. The proof
+**is** the growth loop, not just a trust feature.
 
 ---
 
