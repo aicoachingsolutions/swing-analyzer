@@ -149,8 +149,8 @@ export default function Home() {
 
   return (
     <main className="wrap">
-      <p className="eyebrow">Free Swing Analyzer</p>
-      <h1>Describe the swing. Get a coaching breakdown.</h1>
+      <p className="eyebrow">Free Swing &amp; Pitching Analyzer</p>
+      <h1>Describe the swing or pitch. Get a coaching breakdown.</h1>
       <p className="lede">
         Tell us what you&apos;re seeing in a baseball, softball, or golf swing or
         pitch — like &ldquo;she rolls over everything&rdquo; or &ldquo;he&apos;s

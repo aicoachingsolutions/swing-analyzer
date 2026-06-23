@@ -4,9 +4,9 @@ import SiteHeader from "./_components/site-header";
 import SiteFooter from "./_components/site-footer";
 
 export const metadata: Metadata = {
-  title: "Free Swing Analyzer — AI Coaching Solutions",
+  title: "Free Swing & Pitching Analyzer — AI Coaching Solutions",
   description:
-    "Describe a golf, baseball, or softball swing or pitch and get a sharp coaching breakdown — root cause, cues, and a drill for your next practice.",
+    "Get an AI coaching breakdown of a baseball, softball, or golf swing or pitch — root cause, cues, and a drill for your next practice.",
 };
 
 export default function RootLayout({

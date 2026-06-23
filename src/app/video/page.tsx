@@ -180,11 +180,11 @@ export default function VideoPage() {
   if (!email) {
     return (
       <main className="wrap">
-        <p className="eyebrow">Video Swing Breakdown</p>
-        <h1>Sign in to analyze your swing on video</h1>
+        <p className="eyebrow">Video Swing &amp; Pitching Breakdown</p>
+        <h1>Sign in to analyze your swing or pitch on video</h1>
         <p className="lede">
-          Upload a swing video and get an AI frame-by-frame breakdown. New accounts get
-          <strong> 2 free video breakdowns</strong>.
+          Upload a swing or pitching video and get an AI frame-by-frame breakdown. New
+          accounts get <strong>2 free video breakdowns</strong>.
         </p>
         <form className="card" onSubmit={sendMagicLink}>
           {signinSent ? (
@@ -214,8 +214,8 @@ export default function VideoPage() {
   // Signed in → video flow.
   return (
     <main className="wrap">
-      <p className="eyebrow">Video Swing Breakdown</p>
-      <h1>Upload a swing. See what the AI sees.</h1>
+      <p className="eyebrow">Video Swing &amp; Pitching Breakdown</p>
+      <h1>Upload a swing or pitch. See what the AI sees.</h1>
       <p className="lede">
         We pull key frames from your video, show you exactly what&apos;s analyzed, and
         return a coaching breakdown.
@@ -256,7 +256,7 @@ export default function VideoPage() {
           maxLength={600}
         />
 
-        <label style={{ marginTop: 16 }}>Swing video</label>
+        <label style={{ marginTop: 16 }}>Swing or pitching video</label>
         <input type="file" accept="video/*" onChange={onFile} />
 
         {extracting && <p className="meta">Pulling frames from your video…</p>}
@@ -284,7 +284,7 @@ export default function VideoPage() {
             {outOfCredits && (
               <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <button type="button" className="btn" style={{ marginTop: 0, width: "auto" }} onClick={() => startCheckout("pack")}>
-                  Buy a Swing Pack — $4.99 / 5
+                  Buy a 5-Pack — $4.99 (swing or pitching)
                 </button>
                 <button type="button" className="btn" style={{ marginTop: 0, width: "auto", background: "transparent", color: "var(--gold)", border: "1px solid var(--gold)" }} onClick={() => startCheckout("pro_month")}>
                   Go Pro — 20/mo
