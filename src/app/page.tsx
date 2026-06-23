@@ -158,6 +158,11 @@ export default function Home() {
         for your next practice.
       </p>
 
+      <p className="meta" style={{ marginBottom: 20 }}>
+        Want a frame-by-frame <strong>video breakdown</strong>?{" "}
+        <a className="upgrade" href="/video">Try the video analyzer →</a> (2 free with sign-up)
+      </p>
+
       <form className="card" onSubmit={onSubmit}>
         <div className="row">
           <div>

@@ -181,6 +181,19 @@ textarea { resize: vertical; min-height: 110px; }
   font-weight: 700; text-decoration: underline;
 }
 
+.frames {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 10px 0 16px;
+}
+.frame {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
 .result { margin-top: 28px; }
 .result h2 { font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin: 24px 0 8px; }
 .result p { margin: 0 0 8px; }

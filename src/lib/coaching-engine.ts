@@ -103,6 +103,114 @@ export const BreakdownSchema = z.object({
 
 export type BreakdownResult = z.infer<typeof BreakdownSchema>;
 
+/**
+ * Vision breakdown — analyzes the actual frames the customer sees.
+ * `images` are data URLs (e.g. "data:image/jpeg;base64,...") extracted from the
+ * uploaded video in the browser, so we never process raw video server-side.
+ */
+export type VisionInput = {
+  sport: (typeof BREAKDOWN_SPORTS)[number];
+  motion: (typeof BREAKDOWN_MOTIONS)[number];
+  handedness?: "left" | "right";
+  ageGroup?: string;
+  skillLevel?: string;
+  mainIssue?: string;
+};
+
+export async function runVisionBreakdown(
+  input: VisionInput,
+  images: string[]
+): Promise<BreakdownResult> {
+  const { sport, motion, handedness, ageGroup, skillLevel, mainIssue } = input;
+  const framework = getFramework(sport, motion);
+  const athleteProfile = `${ageGroup || "a developing"} athlete at a ${skillLevel || "developing"} level`;
+
+  const system = `
+You are a national-level ${sport} ${motion} coach and biomechanics specialist. You are shown a sequence of still frames captured from an athlete's ${sport} ${motion}. Analyze what you actually SEE in the frames — positions, sequence, angles — and deliver a breakdown sharp enough to run practice off it tonight.
+
+HOW YOU THINK (reason from this sport framework):
+${framework}
+
+COACHING RUBRIC:
+- Read the frames in order as a motion. Identify the earliest breakdown in the kinetic sequence and lead with that ROOT CAUSE.
+- Reference what is visible ("in the contact frame the front side has already opened…").
+- Calibrate rep counts, vocabulary, and cueing to ${athleteProfile}.
+- Make cues FELT, tied to a sensation in the hands, hips, feet, barrel, or clubface.
+- If the frames are unclear or off-angle, say what you can and note what to capture next time. Commit to the most likely root cause.
+
+OUTPUT — valid JSON only:
+- mechanics (4–6 sentences): the root cause and how it cascades, referencing the frames.
+- timing (2–4 sentences): where in the sequence timing breaks down and what correct should feel like.
+- cues (4–7 strings): short, vivid, athlete-facing.
+- nextFocus (2–4 sentences): the single highest-leverage fix.
+- drill (4–6 sentences): an established drill with setup, reps for ${athleteProfile}, the one thing to watch, why it targets this root cause, and a progression.
+- metrics: primaryFault (short label), faultCategory, severity (1–5), confidence (0–1).
+`.trim();
+
+  const handednessLine = handedness ? `Handedness: ${handedness}-handed\n` : "";
+  const userText = `
+Sport: ${sport}
+Motion: ${motion}
+${handednessLine}Age group: ${ageGroup || "(not provided)"}
+Skill level: ${skillLevel || "(not provided)"}
+What the coach is seeing: ${mainIssue || "(not provided — analyze from the frames)"}
+
+The attached frames are in time order. Return valid JSON only.
+`.trim();
+
+  const model = process.env.OPENAI_VISION_MODEL || process.env.OPENAI_MODEL || "gpt-4o";
+
+  const response = await getOpenAI().chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: system },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: userText },
+          ...images.map((url) => ({
+            type: "image_url" as const,
+            image_url: { url },
+          })),
+        ],
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "breakdown",
+        strict: true,
+        schema: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            mechanics: { type: "string" },
+            timing: { type: "string" },
+            cues: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 8 },
+            nextFocus: { type: "string" },
+            drill: { type: "string" },
+            metrics: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                primaryFault: { type: "string" },
+                faultCategory: { type: "string" },
+                severity: { type: "number" },
+                confidence: { type: "number" },
+              },
+              required: ["primaryFault", "faultCategory", "severity", "confidence"],
+            },
+          },
+          required: ["mechanics", "timing", "cues", "nextFocus", "drill", "metrics"],
+        },
+      },
+    },
+  });
+
+  const content = response.choices?.[0]?.message?.content ?? "";
+  return BreakdownSchema.parse(JSON.parse(content));
+}
+
 export async function runBreakdown(input: BreakdownInput): Promise<BreakdownResult> {
   const { sport, motion, handedness, ageGroup, skillLevel, mainIssue } = input;
   const framework = getFramework(sport, motion);
