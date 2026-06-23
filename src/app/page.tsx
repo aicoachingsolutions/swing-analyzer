@@ -158,10 +158,14 @@ export default function Home() {
         for your next practice.
       </p>
 
-      <p className="meta" style={{ marginBottom: 20 }}>
-        Want a frame-by-frame <strong>video breakdown</strong>?{" "}
-        <a className="upgrade" href="/video">Try the video analyzer →</a> (2 free with sign-up)
-      </p>
+      <a href="/video" className="video-cta">
+        <span className="video-cta__icon" aria-hidden="true">🎥</span>
+        <span className="video-cta__text">
+          <strong>New: Video Swing &amp; Pitching Breakdown</strong>
+          <span>Upload a clip — see the exact frames the AI reads and get a full breakdown. 2 free with sign-up.</span>
+        </span>
+        <span className="video-cta__btn">Try it →</span>
+      </a>
 
       <form className="card" onSubmit={onSubmit}>
         <div className="row">
