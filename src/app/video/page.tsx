@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { LINKS } from "@/lib/links";
 
 type Result = {
   mechanics: string;
@@ -120,6 +119,22 @@ export default function VideoPage() {
       setError(err instanceof Error ? err.message : "Could not read that video.");
     } finally {
       setExtracting(false);
+    }
+  }
+
+  async function startCheckout(plan: "pack" | "pro_month" | "pro_year") {
+    setError(null);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else setError(data.error || "Could not start checkout.");
+    } catch {
+      setError("Could not start checkout. Please try again.");
     }
   }
 
@@ -267,11 +282,13 @@ export default function VideoPage() {
           <div className="err">
             {error}
             {outOfCredits && (
-              <div style={{ marginTop: 10 }}>
-                {/* TODO: wire Stripe checkout for these */}
-                <a className="upgrade" href={LINKS.pricing}>Buy a Swing Pack ($4.99 / 5)</a>
-                {"  ·  "}
-                <a className="upgrade" href={LINKS.pricing}>Go Pro (20/mo)</a>
+              <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button type="button" className="btn" style={{ marginTop: 0, width: "auto" }} onClick={() => startCheckout("pack")}>
+                  Buy a Swing Pack — $4.99 / 5
+                </button>
+                <button type="button" className="btn" style={{ marginTop: 0, width: "auto", background: "transparent", color: "var(--gold)", border: "1px solid var(--gold)" }} onClick={() => startCheckout("pro_month")}>
+                  Go Pro — 20/mo
+                </button>
               </div>
             )}
           </div>
